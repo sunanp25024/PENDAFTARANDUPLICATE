@@ -231,6 +231,78 @@ const App: React.FC = () => {
   const [availablePositions, setAvailablePositions] = useState<string[]>([]);
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
   const [availableDetailLocations, setAvailableDetailLocations] = useState<string[]>([]);
+  const [availablePlacements, setAvailablePlacements] = useState<string[]>([]);
+
+  // Position-Placement mapping
+  const positionPlacements = {
+    'Sales Officer - CMO': [
+      'ADIRA TEBET MOTOR',
+      'ADIRA KELAPA GADING MOTOR',
+      'ADIRA TEBET MOBIL',
+      'ADIRA KELAPA GADING MOBIL',
+      'ADIRA BACK OFFICE JAKARTA',
+      'ADIRA BOGOR MOTOR',
+      'ADIRA DEPOK MOTOR',
+      'ADIRA BEKASI MOTOR',
+      'ADIRA TANGERANG MOTOR'
+    ],
+    'Collection Remedial Officer': [
+      'ADIRA BACK OFFICE JAKARTA',
+      'SMS FINANCE JAKARTA TIMUR',
+      'WOM FINANCE JAKARTA PUSAT',
+      'FIF GROUP JAKARTA PUSAT'
+    ],
+    'Relationship Officer (RO)': [
+      'ADIRA BACK OFFICE JAKARTA',
+      'SMS FINANCE JAKARTA TIMUR',
+      'WOM FINANCE JAKARTA PUSAT'
+    ],
+    'CUSTOMER SERVICE STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'DATA ADMIN STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'GENERAL ADMIN STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'TELLER': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'CLUSTER COLLECTION SUPPORT': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL COLLECTION SUPPORT': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL CREDIT ADMIN': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL CREDIT SUPPORT': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL TELESURVEYOR': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'AREA RECOVERY ADMIN': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'COLLATERAL STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'PAYMENT PROCESSOR STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL MESSENGER STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'WAREHOUSE STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'MKT ADMIN': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ]
+  };
 
   // Update available placements when position changes
   useEffect(() => {
@@ -429,7 +501,7 @@ const App: React.FC = () => {
       const submissionData = {
         ...formData,
         timestamp: new Date().toISOString(),
-        fullPenempatan: `${formData.penempatan} - ${formData.detailPenempatan}`,
+        penempatan: formData.detailPenempatan || formData.penempatan,
         cvFileData,
         cvFileName
       };
@@ -601,29 +673,74 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
         return (
           <div className="space-y-4 sm:space-y-6">
             <FormInput
-              label="Posisi yang Dilamar"
-              name="posisiDilamar"
+              label="Client"
+              name="client"
               type="select"
-              value={formData.posisiDilamar}
-              onChange={(value) => updateFormData('posisiDilamar', value)}
-              options={Object.keys(positionPlacements)}
-              error={errors.posisiDilamar}
+              value={formData.client}
+              onChange={(value) => {
+                updateFormData('client', value);
+                // Reset dependent fields when client changes
+                updateFormData('posisiDilamar', '');
+                updateFormData('penempatan', '');
+                updateFormData('detailPenempatan', '');
+                setAvailablePositions(value ? clientData[value as keyof typeof clientData]?.positions || [] : []);
+              }}
+              options={Object.keys(clientData)}
+              error={errors.client}
               required
-              icon={Target}
+              icon={Building2}
             />
             
-            {availablePlacements.length > 0 && (
+            {availablePositions.length > 0 && (
               <FormInput
-                label="Penempatan Kerja"
+                label="Posisi yang Dilamar"
+                name="posisiDilamar"
+                type="select"
+                value={formData.posisiDilamar}
+                onChange={(value) => {
+                  updateFormData('posisiDilamar', value);
+                  // Reset dependent fields
+                  updateFormData('penempatan', '');
+                  updateFormData('detailPenempatan', '');
+                }}
+                options={availablePositions}
+                error={errors.posisiDilamar}
+                required
+                icon={Target}
+              />
+            )}
+            
+            {formData.posisiDilamar && (
+              <FormInput
+                label="Lokasi Penempatan"
                 name="penempatan"
                 type="select"
                 value={formData.penempatan}
-                onChange={(value) => updateFormData('penempatan', value)}
-                options={availablePlacements}
+                onChange={(value) => {
+                  updateFormData('penempatan', value);
+                  // Set available detail locations based on client and location
+                  const details = locationData[value as keyof typeof locationData]?.[formData.client as keyof typeof locationData[keyof typeof locationData]] || [];
+                  setAvailableDetailLocations(details);
+                  updateFormData('detailPenempatan', '');
+                }}
+                options={Object.keys(locationData)}
                 error={errors.penempatan}
                 required
                 icon={MapPin}
-                placeholder={availablePlacements.length === 1 ? availablePlacements[0] : "Pilih penempatan kerja"}
+              />
+            )}
+            
+            {availableDetailLocations.length > 0 && (
+              <FormInput
+                label="Detail Penempatan"
+                name="detailPenempatan"
+                type="select"
+                value={formData.detailPenempatan}
+                onChange={(value) => updateFormData('detailPenempatan', value)}
+                options={availableDetailLocations}
+                error={errors.detailPenempatan}
+                required
+                icon={MapPin}
               />
             )}
           </div>
@@ -639,6 +756,16 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               onChange={(value) => updateFormData('namaLengkap', value)}
               error={errors.namaLengkap}
               required
+              icon={User}
+            />
+            <FormInput
+              label="NIK"
+              name="nik"
+              value={formData.nik}
+              onChange={(value) => updateFormData('nik', value)}
+              error={errors.nik}
+              required
+              maxLength={16}
               icon={User}
             />
             <FormInput
