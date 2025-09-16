@@ -67,7 +67,7 @@ const ProgressSteps: React.FC<ProgressStepsProps> = ({ steps, currentStep }) => 
                     ? `bg-gradient-to-r ${step.color} text-white shadow-xl transform scale-110` 
                     : isCompleted 
                     ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-white shadow-lg' 
-                    : 'bg-white/80 backdrop-blur-sm text-gray-400 border-2 border-gray-200'
+                    : 'bg-white/90 backdrop-blur-sm text-gray-700 border-2 border-gray-300 shadow-md'
                   }
                 `}>
                   {isCompleted ? (
@@ -82,7 +82,7 @@ const ProgressSteps: React.FC<ProgressStepsProps> = ({ steps, currentStep }) => 
                     ? 'text-gray-900' 
                     : isCompleted 
                     ? 'text-emerald-600' 
-                    : 'text-gray-500'
+                    : 'text-gray-700'
                 }`}>
                   {step.title}
                 </p>
