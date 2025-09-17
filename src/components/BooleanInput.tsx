@@ -6,6 +6,8 @@ interface BooleanInputProps {
   value: boolean;
   onChange: (value: boolean) => void;
   icon?: React.ComponentType<{ size?: number; className?: string }>;
+  isUrgent?: boolean;
+  isHidden?: boolean;
 }
 
 const BooleanInput: React.FC<BooleanInputProps> = ({
@@ -13,18 +15,34 @@ const BooleanInput: React.FC<BooleanInputProps> = ({
   name,
   value,
   onChange,
-  icon: Icon
+  icon: Icon,
+  isUrgent = false,
+  isHidden = false
 }) => {
+  // Don't render if hidden
+  if (isHidden) return null;
+
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className={`space-y-3 sm:space-y-4 ${isUrgent ? 'relative' : ''}`}>
+      {isUrgent && (
+        <div className="absolute -top-1 -right-1 z-10">
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-ping"></div>
+          <div className="absolute top-0 w-3 h-3 bg-orange-600 rounded-full"></div>
+        </div>
+      )}
       <label className="block text-xs sm:text-sm font-bold text-gray-700">
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${isUrgent ? 'text-orange-700' : ''}`}>
           {Icon && (
-            <div className="p-1 sm:p-1.5 bg-blue-100 rounded-lg">
-              <Icon size={14} className="text-blue-600" />
+            <div className={`p-1 sm:p-1.5 rounded-lg ${isUrgent ? 'bg-orange-100' : 'bg-blue-100'}`}>
+              <Icon size={14} className={isUrgent ? 'text-orange-600' : 'text-blue-600'} />
             </div>
           )}
           {label}
+          {isUrgent && (
+            <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full animate-pulse">
+              URGENT
+            </span>
+          )}
         </div>
       </label>
       

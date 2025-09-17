@@ -25,64 +25,10 @@ import BooleanInput from './components/BooleanInput';
 import SplashScreen from './components/SplashScreen';
 import LandingPage from './components/LandingPage';
 import LoadingScreen from './components/LoadingScreen';
+import DeveloperMenu from './components/DeveloperMenu';
+import { FormData } from './types/DevEntry';
+import { loadDevSettings } from './utils/devStorage';
 
-interface FormData {
-  // Step 1: Client, Posisi & Penempatan
-  client: string;
-  posisiDilamar: string;
-  penempatan: string;
-  detailPenempatan: string;
-  
-  // Step 2: Data Pribadi
-  namaLengkap: string;
-  nik: string;
-  noHp: string;
-  tempatLahir: string;
-  tanggalLahir: string;
-  umur: string;
-  jenisKelamin: string;
-  statusPerkawinan: string;
-  agama: string;
-  namaAyah: string;
-  namaIbu: string;
-  
-  // Step 3: Alamat
-  alamatKtp: string;
-  alamatDomisili: string;
-  rtRw: string;
-  nomorRumah: string;
-  kelurahan: string;
-  kecamatan: string;
-  kota: string;
-  kodePos: string;
-  
-  // Step 4: Pendidikan
-  tingkatPendidikan: string;
-  namaSekolah: string;
-  jurusan: string;
-  tahunMasuk: string;
-  tahunLulus: string;
-  ipk: string;
-  
-  // Step 5: Pengalaman Kerja
-  pengalamanKerja: boolean;
-  pengalamanLeasing: boolean;
-  namaPerusahaan: string;
-  posisiJabatan: string;
-  periodeKerja: string;
-  deskripsiTugas: string;
-  
-  // Step 6: Dokumen & Persyaratan
-  kendaraanPribadi: boolean;
-  ktpAsli: boolean;
-  simC: boolean;
-  simA: boolean;
-  skck: boolean;
-  npwp: boolean;
-  riwayatBurukKredit: boolean;
-  alasanMelamar: string;
-  cvFile: File | null;
-}
 
 const initialFormData: FormData = {
   client: '',
@@ -215,23 +161,47 @@ const locationData = {
 type AppState = 'splash' | 'landing' | 'loading' | 'form' | 'submitted';
 
 // Check if developer mode is enabled
-const isDeveloperMode = () => {
+const isDeveloperRoute = () => {
   return window.location.pathname === '/developer' || 
-         window.location.search.includes('dev=true') ||
-         localStorage.getItem('developerMode') === 'true';
+         window.location.search.includes('dev=true');
+};
+
+const isDeveloperMode = () => {
+  return isDeveloperRoute() || localStorage.getItem('developerMode') === 'true';
 };
 
 const App: React.FC = () => {
+  const [isDevRoute, setIsDevRoute] = useState(isDeveloperRoute());
   const [isDevMode, setIsDevMode] = useState(isDeveloperMode());
   const [appState, setAppState] = useState<AppState>('splash');
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hiddenFields, setHiddenFields] = useState<string[]>([]);
+  const [isUrgentMode, setIsUrgentMode] = useState(false);
   const [availablePositions, setAvailablePositions] = useState<string[]>([]);
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
   const [availableDetailLocations, setAvailableDetailLocations] = useState<string[]>([]);
   const [availablePlacements, setAvailablePlacements] = useState<string[]>([]);
+
+  // Load dev settings on mount
+  useEffect(() => {
+    const settings = loadDevSettings();
+    if (settings.skipSplashScreen && appState === 'splash') {
+      setAppState('landing');
+    }
+  }, []);
+
+  // Check for route changes
+  useEffect(() => {
+    const checkRoute = () => {
+      setIsDevRoute(isDeveloperRoute());
+    };
+    
+    window.addEventListener('popstate', checkRoute);
+    return () => window.removeEventListener('popstate', checkRoute);
+  }, []);
 
   // Position-Placement mapping
   const positionPlacements = {
@@ -357,10 +327,21 @@ const App: React.FC = () => {
   ];
 
   const handleSplashComplete = () => {
-    setAppState('landing');
+    const settings = loadDevSettings();
+    if (settings.skipLoadingScreen) {
+      setAppState('form');
+    } else {
+      setAppState('landing');
+    }
   };
 
   const handleStartApplication = () => {
+    const settings = loadDevSettings();
+    if (settings.skipLoadingScreen) {
+      setAppState('form');
+      return;
+    }
+    
     setAppState('loading');
     // Simulate loading time
     setTimeout(() => {
@@ -368,6 +349,23 @@ const App: React.FC = () => {
     }, 3000);
   };
 
+  const handleLoadFromDeveloper = (newFormData: FormData, newHiddenFields: string[], urgent: boolean) => {
+    setFormData(newFormData);
+    setHiddenFields(newHiddenFields);
+    setIsUrgentMode(urgent);
+    setAppState('form');
+    setCurrentStep(0);
+    // Update URL to remove developer route
+    window.history.pushState({}, '', '/');
+    setIsDevRoute(false);
+  };
+
+  const handleBackToApp = () => {
+    // Update URL to remove developer route
+    window.history.pushState({}, '', '/');
+    setIsDevRoute(false);
+    setAppState('form');
+  };
   const updateFormData = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -561,6 +559,17 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
     return `https://wa.me/${phoneNumber}?text=${message}`;
   };
 
+  // Render developer menu if on developer route
+  if (isDevRoute) {
+    return (
+      <DeveloperMenu
+        onLoadToMainForm={handleLoadFromDeveloper}
+        onBackToApp={handleBackToApp}
+        currentFormData={formData}
+      />
+    );
+  }
+
   // Render different states
   if (appState === 'splash') {
     return <SplashScreen onComplete={handleSplashComplete} />;
@@ -689,6 +698,8 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.client}
               required
               icon={Building2}
+              isUrgent={isUrgentMode && hiddenFields.includes('client') === false}
+              isHidden={hiddenFields.includes('client')}
             />
             
             {availablePositions.length > 0 && (
@@ -707,6 +718,8 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 error={errors.posisiDilamar}
                 required
                 icon={Target}
+                isUrgent={isUrgentMode && hiddenFields.includes('posisiDilamar') === false}
+                isHidden={hiddenFields.includes('posisiDilamar')}
               />
             )}
             
@@ -727,6 +740,8 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 error={errors.penempatan}
                 required
                 icon={MapPin}
+                isUrgent={isUrgentMode && hiddenFields.includes('penempatan') === false}
+                isHidden={hiddenFields.includes('penempatan')}
               />
             )}
             
@@ -741,6 +756,8 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 error={errors.detailPenempatan}
                 required
                 icon={MapPin}
+                isUrgent={isUrgentMode && hiddenFields.includes('detailPenempatan') === false}
+                isHidden={hiddenFields.includes('detailPenempatan')}
               />
             )}
           </div>
@@ -757,6 +774,8 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.namaLengkap}
               required
               icon={User}
+              isUrgent={isUrgentMode && hiddenFields.includes('namaLengkap') === false}
+              isHidden={hiddenFields.includes('namaLengkap')}
             />
             <FormInput
               label="NIK"
@@ -767,16 +786,8 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               required
               maxLength={16}
               icon={User}
-            />
-            <FormInput
-              label="NIK"
-              name="nik"
-              value={formData.nik}
-              onChange={(value) => updateFormData('nik', value)}
-              error={errors.nik}
-              required
-              maxLength={16}
-              icon={User}
+              isUrgent={isUrgentMode && hiddenFields.includes('nik') === false}
+              isHidden={hiddenFields.includes('nik')}
             />
             <FormInput
               label="Nomor HP"
@@ -787,6 +798,8 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.noHp}
               required
               icon={Phone}
+              isUrgent={isUrgentMode && hiddenFields.includes('noHp') === false}
+              isHidden={hiddenFields.includes('noHp')}
             />
             <FormInput
               label="Tempat Lahir"
@@ -796,6 +809,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.tempatLahir}
               required
               icon={MapPin}
+              isHidden={hiddenFields.includes('tempatLahir')}
             />
             <FormInput
               label="Tanggal Lahir"
@@ -806,6 +820,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.tanggalLahir}
               required
               icon={Calendar}
+              isHidden={hiddenFields.includes('tanggalLahir')}
             />
             <FormInput
               label="Umur"
@@ -814,6 +829,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               onChange={(value) => updateFormData('umur', value)}
               placeholder="Otomatis terisi"
               icon={Calendar}
+              isHidden={hiddenFields.includes('umur')}
             />
             <FormInput
               label="Jenis Kelamin"
@@ -825,6 +841,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.jenisKelamin}
               required
               icon={User}
+              isHidden={hiddenFields.includes('jenisKelamin')}
             />
             <FormInput
               label="Status Perkawinan"
@@ -836,6 +853,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.statusPerkawinan}
               required
               icon={Heart}
+              isHidden={hiddenFields.includes('statusPerkawinan')}
             />
             <FormInput
               label="Agama"
@@ -847,6 +865,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.agama}
               required
               icon={Heart}
+              isHidden={hiddenFields.includes('agama')}
             />
             <FormInput
               label="Nama Ayah"
@@ -856,6 +875,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.namaAyah}
               required
               icon={User}
+              isHidden={hiddenFields.includes('namaAyah')}
             />
             <FormInput
               label="Nama Ibu"
@@ -865,6 +885,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.namaIbu}
               required
               icon={User}
+              isHidden={hiddenFields.includes('namaIbu')}
             />
           </div>
         );
@@ -883,6 +904,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 required
                 rows={3}
                 icon={MapPin}
+                isHidden={hiddenFields.includes('alamatKtp')}
               />
             </div>
             <div className="lg:col-span-2">
@@ -896,6 +918,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 required
                 rows={3}
                 icon={MapPin}
+                isHidden={hiddenFields.includes('alamatDomisili')}
               />
             </div>
             <FormInput
@@ -905,6 +928,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               onChange={(value) => updateFormData('rtRw', value)}
               placeholder="001/002"
               icon={MapPin}
+              isHidden={hiddenFields.includes('rtRw')}
             />
             <FormInput
               label="Nomor Rumah"
@@ -912,6 +936,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               value={formData.nomorRumah}
               onChange={(value) => updateFormData('nomorRumah', value)}
               icon={MapPin}
+              isHidden={hiddenFields.includes('nomorRumah')}
             />
             <FormInput
               label="Kelurahan"
@@ -921,6 +946,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.kelurahan}
               required
               icon={MapPin}
+              isHidden={hiddenFields.includes('kelurahan')}
             />
             <FormInput
               label="Kecamatan"
@@ -930,6 +956,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.kecamatan}
               required
               icon={MapPin}
+              isHidden={hiddenFields.includes('kecamatan')}
             />
             <FormInput
               label="Kota"
@@ -939,6 +966,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.kota}
               required
               icon={MapPin}
+              isHidden={hiddenFields.includes('kota')}
             />
             <FormInput
               label="Kode Pos"
@@ -947,6 +975,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               onChange={(value) => updateFormData('kodePos', value)}
               maxLength={5}
               icon={MapPin}
+              isHidden={hiddenFields.includes('kodePos')}
             />
           </div>
         );
@@ -964,6 +993,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.tingkatPendidikan}
               required
               icon={GraduationCap}
+              isHidden={hiddenFields.includes('tingkatPendidikan')}
             />
             <FormInput
               label="Nama Sekolah/Universitas"
@@ -973,6 +1003,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               error={errors.namaSekolah}
               required
               icon={GraduationCap}
+              isHidden={hiddenFields.includes('namaSekolah')}
             />
             <FormInput
               label="Jurusan"
@@ -980,6 +1011,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               value={formData.jurusan}
               onChange={(value) => updateFormData('jurusan', value)}
               icon={GraduationCap}
+              isHidden={hiddenFields.includes('jurusan')}
             />
             <FormInput
               label="Tahun Masuk"
@@ -988,6 +1020,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               value={formData.tahunMasuk}
               onChange={(value) => updateFormData('tahunMasuk', value)}
               icon={Calendar}
+              isHidden={hiddenFields.includes('tahunMasuk')}
             />
             <FormInput
               label="Tahun Lulus"
@@ -996,6 +1029,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               value={formData.tahunLulus}
               onChange={(value) => updateFormData('tahunLulus', value)}
               icon={Calendar}
+              isHidden={hiddenFields.includes('tahunLulus')}
             />
             <FormInput
               label="IPK/Nilai Rata-rata"
@@ -1004,6 +1038,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               onChange={(value) => updateFormData('ipk', value)}
               placeholder="3.50"
               icon={GraduationCap}
+              isHidden={hiddenFields.includes('ipk')}
             />
           </div>
         );
@@ -1018,6 +1053,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               value={formData.pengalamanKerja}
               onChange={(value) => updateFormData('pengalamanKerja', value)}
               icon={Briefcase}
+              isHidden={hiddenFields.includes('pengalamanKerja')}
             />
             
             {/* Detail Questions - Only show if has work experience */}
@@ -1037,6 +1073,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                   value={formData.pengalamanLeasing}
                   onChange={(value) => updateFormData('pengalamanLeasing', value)}
                   icon={Briefcase}
+                  isHidden={hiddenFields.includes('pengalamanLeasing')}
                 />
 
                 {/* Work Experience Details */}
@@ -1048,6 +1085,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                     onChange={(value) => updateFormData('namaPerusahaan', value)}
                     error={errors.namaPerusahaan}
                     icon={Building2}
+                    isHidden={hiddenFields.includes('namaPerusahaan')}
                   />
                   <FormInput
                     label="Posisi/Jabatan"
@@ -1055,6 +1093,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                     value={formData.posisiJabatan}
                     onChange={(value) => updateFormData('posisiJabatan', value)}
                     icon={Briefcase}
+                    isHidden={hiddenFields.includes('posisiJabatan')}
                   />
                   <FormInput
                     label="Periode Kerja"
@@ -1063,6 +1102,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                     onChange={(value) => updateFormData('periodeKerja', value)}
                     placeholder="Jan 2020 - Des 2023"
                     icon={Calendar}
+                    isHidden={hiddenFields.includes('periodeKerja')}
                   />
                   <div className="lg:col-span-2">
                     <FormInput
@@ -1073,6 +1113,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                       onChange={(value) => updateFormData('deskripsiTugas', value)}
                       rows={3}
                       icon={FileText}
+                      isHidden={hiddenFields.includes('deskripsiTugas')}
                     />
                   </div>
                 </div>
@@ -1091,6 +1132,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 value={formData.kendaraanPribadi}
                 onChange={(value) => updateFormData('kendaraanPribadi', value)}
                 icon={Car}
+                isHidden={hiddenFields.includes('kendaraanPribadi')}
               />
               <BooleanInput
                 label="Apakah Anda memiliki KTP Asli?"
@@ -1098,6 +1140,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 value={formData.ktpAsli}
                 onChange={(value) => updateFormData('ktpAsli', value)}
                 icon={User}
+                isHidden={hiddenFields.includes('ktpAsli')}
               />
               <BooleanInput
                 label="Apakah Anda memiliki SIM C?"
@@ -1105,6 +1148,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 value={formData.simC}
                 onChange={(value) => updateFormData('simC', value)}
                 icon={Car}
+                isHidden={hiddenFields.includes('simC')}
               />
               <BooleanInput
                 label="Apakah Anda memiliki SIM A?"
@@ -1112,6 +1156,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 value={formData.simA}
                 onChange={(value) => updateFormData('simA', value)}
                 icon={Car}
+                isHidden={hiddenFields.includes('simA')}
               />
               <BooleanInput
                 label="Apakah Anda memiliki SKCK?"
@@ -1119,6 +1164,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 value={formData.skck}
                 onChange={(value) => updateFormData('skck', value)}
                 icon={FileText}
+                isHidden={hiddenFields.includes('skck')}
               />
               <BooleanInput
                 label="Apakah Anda memiliki NPWP?"
@@ -1126,6 +1172,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 value={formData.npwp}
                 onChange={(value) => updateFormData('npwp', value)}
                 icon={CreditCard}
+                isHidden={hiddenFields.includes('npwp')}
               />
               <div className="lg:col-span-2">
                 <BooleanInput
@@ -1134,6 +1181,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                   value={formData.riwayatBurukKredit}
                   onChange={(value) => updateFormData('riwayatBurukKredit', value)}
                   icon={CreditCard}
+                  isHidden={hiddenFields.includes('riwayatBurukKredit')}
                 />
               </div>
             </div>
@@ -1150,6 +1198,7 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
               maxLength={500}
               placeholder="Jelaskan mengapa Anda tertarik dengan posisi ini dan perusahaan kami..."
               icon={FileText}
+              isHidden={hiddenFields.includes('alasanMelamar')}
             />
 
             <div className="space-y-2 sm:space-y-3">
@@ -1206,11 +1255,11 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 Portal Karir SWAPRO
               </span>
               <span className="text-xl sm:text-2xl lg:text-3xl ml-2">✨</span>
-              {isDeveloperMode() && (
+              {!isDevRoute && isDeveloperMode() && (
                 <button
                   onClick={() => {
-                    localStorage.setItem('developerMode', 'true');
-                    setIsDevMode(true);
+                    window.history.pushState({}, '', '/developer');
+                    setIsDevRoute(true);
                   }}
                   className="ml-4 text-sm bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors"
                 >
