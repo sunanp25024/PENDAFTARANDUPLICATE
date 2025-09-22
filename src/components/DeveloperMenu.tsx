@@ -40,7 +40,7 @@ interface DeveloperMenuProps {
 
 type ActiveTab = 'dashboard' | 'form-management' | 'settings';
 
-export function DeveloperMenu({ onLoadToMainForm, onBackToApp, currentFormData }: DeveloperMenuProps) {
+export default function DeveloperMenu({ onLoadToMainForm, onBackToApp, currentFormData }: DeveloperMenuProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settings, setSettings] = useState({
