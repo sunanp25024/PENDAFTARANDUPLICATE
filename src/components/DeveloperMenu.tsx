@@ -29,8 +29,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { FormData } from '../types/DevEntry';
-import { DeveloperDashboard } from './DeveloperDashboard';
-import { FormManagement } from './FormManagement';
+import DeveloperDashboard from './DeveloperDashboard';
+import FormManagement from './FormManagement';
 
 interface DeveloperMenuProps {
   onLoadToMainForm: (data: FormData) => void;
