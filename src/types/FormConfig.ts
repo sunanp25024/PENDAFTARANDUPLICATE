@@ -608,20 +608,72 @@ export const defaultFormConfig: FormConfig = {
     }
   ],
   clients: [
-    { id: 'adira', name: 'ADIRA', positions: [], isActive: true },
-    { id: 'sms', name: 'SMS', positions: [], isActive: true },
-    { id: 'wom', name: 'WOM', positions: [], isActive: true },
-    { id: 'fif', name: 'FIF', positions: [], isActive: true }
+    { 
+      id: 'adira', 
+      name: 'ADIRA', 
+      positions: [
+        'Sales Officer - CMO',
+        'Collection Remedial Officer', 
+        'Relationship Officer (RO)',
+        'CUSTOMER SERVICE STAFF',
+        'DATA ADMIN STAFF',
+        'GENERAL ADMIN STAFF',
+        'TELLER',
+        'CLUSTER COLLECTION SUPPORT',
+        'REGIONAL COLLECTION SUPPORT',
+        'REGIONAL CREDIT ADMIN',
+        'REGIONAL CREDIT SUPPORT',
+        'REGIONAL TELESURVEYOR',
+        'AREA RECOVERY ADMIN',
+        'COLLATERAL STAFF',
+        'PAYMENT PROCESSOR STAFF',
+        'REGIONAL MESSENGER STAFF',
+        'WAREHOUSE STAFF',
+        'MKT ADMIN'
+      ], 
+      isActive: true 
+    },
+    { 
+      id: 'sms', 
+      name: 'SMS', 
+      positions: [
+        'Sales Officer - CMO',
+        'Collection Remedial Officer',
+        'Relationship Officer (RO)',
+        'CUSTOMER SERVICE STAFF'
+      ], 
+      isActive: true 
+    },
+    { 
+      id: 'wom', 
+      name: 'WOM', 
+      positions: [
+        'Sales Officer - CMO',
+        'Collection Remedial Officer',
+        'CUSTOMER SERVICE STAFF'
+      ], 
+      isActive: true 
+    },
+    { 
+      id: 'fif', 
+      name: 'FIF', 
+      positions: [
+        'Sales Officer - CMO',
+        'Collection Remedial Officer',
+        'CUSTOMER SERVICE STAFF'
+      ], 
+      isActive: true 
+    }
   ],
   locations: [
     { 
       id: 'jakarta', 
       name: 'JAKARTA', 
       details: {
-        adira: ['ADIRA TEBET MOTOR', 'ADIRA TEBET MOBIL', 'ADIRA KELAPA GADING MOTOR', 'ADIRA KELAPA GADING MOBIL', 'ADIRA BACK OFFICE JAKARTA'],
-        sms: ['SMS FINANCE JAKARTA TIMUR', 'SMS FINANCE JAKARTA UTARA', 'SMS FINANCE JAKARTA SELATAN'],
-        wom: ['WOM FINANCE JAKARTA PUSAT', 'WOM FINANCE JAKARTA BARAT'],
-        fif: ['FIF GROUP JAKARTA PUSAT', 'FIF GROUP JAKARTA TIMUR']
+        ADIRA: ['ADIRA TEBET MOTOR', 'ADIRA TEBET MOBIL', 'ADIRA KELAPA GADING MOTOR', 'ADIRA KELAPA GADING MOBIL', 'ADIRA BACK OFFICE JAKARTA'],
+        SMS: ['SMS FINANCE JAKARTA TIMUR', 'SMS FINANCE JAKARTA UTARA', 'SMS FINANCE JAKARTA SELATAN'],
+        WOM: ['WOM FINANCE JAKARTA PUSAT', 'WOM FINANCE JAKARTA BARAT'],
+        FIF: ['FIF GROUP JAKARTA PUSAT', 'FIF GROUP JAKARTA TIMUR']
       },
       isActive: true 
     },
@@ -629,10 +681,10 @@ export const defaultFormConfig: FormConfig = {
       id: 'bogor', 
       name: 'BOGOR', 
       details: {
-        adira: ['ADIRA BOGOR MOTOR', 'ADIRA BOGOR MOBIL'],
-        sms: ['SMS FINANCE BOGOR'],
-        wom: ['WOM FINANCE BOGOR'],
-        fif: ['FIF GROUP BOGOR']
+        ADIRA: ['ADIRA BOGOR MOTOR', 'ADIRA BOGOR MOBIL'],
+        SMS: ['SMS FINANCE BOGOR'],
+        WOM: ['WOM FINANCE BOGOR'],
+        FIF: ['FIF GROUP BOGOR']
       },
       isActive: true 
     },
@@ -640,10 +692,10 @@ export const defaultFormConfig: FormConfig = {
       id: 'depok', 
       name: 'DEPOK', 
       details: {
-        adira: ['ADIRA DEPOK MOTOR', 'ADIRA DEPOK MOBIL'],
-        sms: ['SMS FINANCE DEPOK'],
-        wom: ['WOM FINANCE DEPOK'],
-        fif: ['FIF GROUP DEPOK']
+        ADIRA: ['ADIRA DEPOK MOTOR', 'ADIRA DEPOK MOBIL'],
+        SMS: ['SMS FINANCE DEPOK'],
+        WOM: ['WOM FINANCE DEPOK'],
+        FIF: ['FIF GROUP DEPOK']
       },
       isActive: true 
     },
@@ -651,10 +703,10 @@ export const defaultFormConfig: FormConfig = {
       id: 'bekasi', 
       name: 'BEKASI', 
       details: {
-        adira: ['ADIRA BEKASI MOTOR', 'ADIRA BEKASI MOBIL', 'ADIRA PONDOK GEDE'],
-        sms: ['SMS FINANCE BEKASI'],
-        wom: ['WOM FINANCE BEKASI'],
-        fif: ['FIF GROUP BEKASI']
+        ADIRA: ['ADIRA BEKASI MOTOR', 'ADIRA BEKASI MOBIL', 'ADIRA PONDOK GEDE'],
+        SMS: ['SMS FINANCE BEKASI'],
+        WOM: ['WOM FINANCE BEKASI'],
+        FIF: ['FIF GROUP BEKASI']
       },
       isActive: true 
     },
@@ -662,10 +714,10 @@ export const defaultFormConfig: FormConfig = {
       id: 'tangerang', 
       name: 'TANGERANG', 
       details: {
-        adira: ['ADIRA TANGERANG MOTOR', 'ADIRA TANGERANG MOBIL', 'ADIRA KETAPANG'],
-        sms: ['SMS FINANCE TANGERANG'],
-        wom: ['WOM FINANCE TANGERANG'],
-        fif: ['FIF GROUP TANGERANG']
+        ADIRA: ['ADIRA TANGERANG MOTOR', 'ADIRA TANGERANG MOBIL', 'ADIRA KETAPANG'],
+        SMS: ['SMS FINANCE TANGERANG'],
+        WOM: ['WOM FINANCE TANGERANG'],
+        FIF: ['FIF GROUP TANGERANG']
       },
       isActive: true 
     }
@@ -694,6 +746,48 @@ export const defaultFormConfig: FormConfig = {
       'WOM FINANCE JAKARTA PUSAT'
     ],
     'CUSTOMER SERVICE STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'DATA ADMIN STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'GENERAL ADMIN STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'TELLER': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'CLUSTER COLLECTION SUPPORT': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL COLLECTION SUPPORT': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL CREDIT ADMIN': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL CREDIT SUPPORT': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL TELESURVEYOR': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'AREA RECOVERY ADMIN': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'COLLATERAL STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'PAYMENT PROCESSOR STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'REGIONAL MESSENGER STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'WAREHOUSE STAFF': [
+      'ADIRA BACK OFFICE JAKARTA'
+    ],
+    'MKT ADMIN': [
       'ADIRA BACK OFFICE JAKARTA'
     ]
   }

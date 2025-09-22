@@ -28,6 +28,7 @@ import LoadingScreen from './components/LoadingScreen';
 import DeveloperMenu from './components/DeveloperMenu';
 import { FormData } from './types/DevEntry';
 import { loadDevSettings } from './utils/devStorage';
+import { loadFormConfig, FormConfig } from './utils/formConfigStorage';
 
 
 const initialFormData: FormData = {
@@ -77,87 +78,6 @@ const initialFormData: FormData = {
   cvFile: null
 };
 
-// New 3-tier structure: Client -> Position -> Location -> Detail Location
-const clientData = {
-  'ADIRA': {
-    positions: [
-      'Sales Officer - CMO',
-      'Collection Remedial Officer', 
-      'Relationship Officer (RO)',
-      'CUSTOMER SERVICE STAFF',
-      'DATA ADMIN STAFF',
-      'GENERAL ADMIN STAFF',
-      'TELLER',
-      'CLUSTER COLLECTION SUPPORT',
-      'REGIONAL COLLECTION SUPPORT',
-      'REGIONAL CREDIT ADMIN',
-      'REGIONAL CREDIT SUPPORT',
-      'REGIONAL TELESURVEYOR',
-      'AREA RECOVERY ADMIN',
-      'COLLATERAL STAFF',
-      'PAYMENT PROCESSOR STAFF',
-      'REGIONAL MESSENGER STAFF',
-      'WAREHOUSE STAFF',
-      'MKT ADMIN'
-    ]
-  },
-  'SMS': {
-    positions: [
-      'Sales Officer - CMO',
-      'Collection Remedial Officer',
-      'Relationship Officer (RO)',
-      'CUSTOMER SERVICE STAFF'
-    ]
-  },
-  'WOM': {
-    positions: [
-      'Sales Officer - CMO',
-      'Collection Remedial Officer',
-      'CUSTOMER SERVICE STAFF'
-    ]
-  },
-  'FIF': {
-    positions: [
-      'Sales Officer - CMO',
-      'Collection Remedial Officer',
-      'CUSTOMER SERVICE STAFF'
-    ]
-  }
-};
-
-const locationData = {
-  'JAKARTA': {
-    'ADIRA': ['ADIRA TEBET MOTOR', 'ADIRA TEBET MOBIL', 'ADIRA KELAPA GADING MOTOR', 'ADIRA KELAPA GADING MOBIL', 'ADIRA BACK OFFICE JAKARTA'],
-    'SMS': ['SMS FINANCE JAKARTA TIMUR', 'SMS FINANCE JAKARTA UTARA', 'SMS FINANCE JAKARTA SELATAN'],
-    'WOM': ['WOM FINANCE JAKARTA PUSAT', 'WOM FINANCE JAKARTA BARAT'],
-    'FIF': ['FIF GROUP JAKARTA PUSAT', 'FIF GROUP JAKARTA TIMUR']
-  },
-  'BOGOR': {
-    'ADIRA': ['ADIRA BOGOR MOTOR', 'ADIRA BOGOR MOBIL'],
-    'SMS': ['SMS FINANCE BOGOR'],
-    'WOM': ['WOM FINANCE BOGOR'],
-    'FIF': ['FIF GROUP BOGOR']
-  },
-  'DEPOK': {
-    'ADIRA': ['ADIRA DEPOK MOTOR', 'ADIRA DEPOK MOBIL'],
-    'SMS': ['SMS FINANCE DEPOK'],
-    'WOM': ['WOM FINANCE DEPOK'],
-    'FIF': ['FIF GROUP DEPOK']
-  },
-  'BEKASI': {
-    'ADIRA': ['ADIRA BEKASI MOTOR', 'ADIRA BEKASI MOBIL', 'ADIRA PONDOK GEDE'],
-    'SMS': ['SMS FINANCE BEKASI'],
-    'WOM': ['WOM FINANCE BEKASI'],
-    'FIF': ['FIF GROUP BEKASI']
-  },
-  'TANGERANG': {
-    'ADIRA': ['ADIRA TANGERANG MOTOR', 'ADIRA TANGERANG MOBIL', 'ADIRA KETAPANG'],
-    'SMS': ['SMS FINANCE TANGERANG'],
-    'WOM': ['WOM FINANCE TANGERANG'],
-    'FIF': ['FIF GROUP TANGERANG']
-  }
-};
-
 type AppState = 'splash' | 'landing' | 'loading' | 'form' | 'submitted';
 
 // Check if developer mode is enabled
@@ -180,6 +100,7 @@ const App: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hiddenFields, setHiddenFields] = useState<string[]>([]);
   const [isUrgentMode, setIsUrgentMode] = useState(false);
+  const [formConfig, setFormConfig] = useState<FormConfig>(loadFormConfig());
   const [availablePositions, setAvailablePositions] = useState<string[]>([]);
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
   const [availableDetailLocations, setAvailableDetailLocations] = useState<string[]>([]);
@@ -193,6 +114,11 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Load form config when app state changes (e.g., returning from developer mode)
+  useEffect(() => {
+    setFormConfig(loadFormConfig());
+  }, [appState]);
+
   // Check for route changes
   useEffect(() => {
     const checkRoute = () => {
@@ -203,81 +129,10 @@ const App: React.FC = () => {
     return () => window.removeEventListener('popstate', checkRoute);
   }, []);
 
-  // Position-Placement mapping
-  const positionPlacements = {
-    'Sales Officer - CMO': [
-      'ADIRA TEBET MOTOR',
-      'ADIRA KELAPA GADING MOTOR',
-      'ADIRA TEBET MOBIL',
-      'ADIRA KELAPA GADING MOBIL',
-      'ADIRA BACK OFFICE JAKARTA',
-      'ADIRA BOGOR MOTOR',
-      'ADIRA DEPOK MOTOR',
-      'ADIRA BEKASI MOTOR',
-      'ADIRA TANGERANG MOTOR'
-    ],
-    'Collection Remedial Officer': [
-      'ADIRA BACK OFFICE JAKARTA',
-      'SMS FINANCE JAKARTA TIMUR',
-      'WOM FINANCE JAKARTA PUSAT',
-      'FIF GROUP JAKARTA PUSAT'
-    ],
-    'Relationship Officer (RO)': [
-      'ADIRA BACK OFFICE JAKARTA',
-      'SMS FINANCE JAKARTA TIMUR',
-      'WOM FINANCE JAKARTA PUSAT'
-    ],
-    'CUSTOMER SERVICE STAFF': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'DATA ADMIN STAFF': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'GENERAL ADMIN STAFF': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'TELLER': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'CLUSTER COLLECTION SUPPORT': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'REGIONAL COLLECTION SUPPORT': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'REGIONAL CREDIT ADMIN': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'REGIONAL CREDIT SUPPORT': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'REGIONAL TELESURVEYOR': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'AREA RECOVERY ADMIN': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'COLLATERAL STAFF': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'PAYMENT PROCESSOR STAFF': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'REGIONAL MESSENGER STAFF': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'WAREHOUSE STAFF': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ],
-    'MKT ADMIN': [
-      'ADIRA BACK OFFICE JAKARTA'
-    ]
-  };
-
   // Update available placements when position changes
   useEffect(() => {
     if (formData.posisiDilamar) {
-      const placements = positionPlacements[formData.posisiDilamar as keyof typeof positionPlacements] || [];
+      const placements = formConfig.positionPlacements[formData.posisiDilamar as keyof typeof formConfig.positionPlacements] || [];
       setAvailablePlacements(placements);
       
       // Auto-select placement if only one option
@@ -291,7 +146,7 @@ const App: React.FC = () => {
       setAvailablePlacements([]);
       setFormData(prev => ({ ...prev, penempatan: '' }));
     }
-  }, [formData.posisiDilamar]);
+  }, [formData.posisiDilamar, formConfig.positionPlacements]);
 
   const steps = [
     { 
@@ -692,9 +547,10 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 updateFormData('posisiDilamar', '');
                 updateFormData('penempatan', '');
                 updateFormData('detailPenempatan', '');
-                setAvailablePositions(value ? clientData[value as keyof typeof clientData]?.positions || [] : []);
+                const selectedClient = formConfig.clients.find(client => client.name === value);
+                setAvailablePositions(selectedClient ? selectedClient.positions : []);
               }}
-              options={Object.keys(clientData)}
+              options={formConfig.clients.filter(client => client.isActive).map(client => client.name)}
               error={errors.client}
               required
               icon={Building2}
@@ -732,11 +588,12 @@ Mohon konfirmasi bahwa data saya telah diterima. Terima kasih! 🙏`;
                 onChange={(value) => {
                   updateFormData('penempatan', value);
                   // Set available detail locations based on client and location
-                  const details = locationData[value as keyof typeof locationData]?.[formData.client as keyof typeof locationData[keyof typeof locationData]] || [];
+                  const selectedLocation = formConfig.locations.find(location => location.name === value);
+                  const details = selectedLocation ? selectedLocation.details[formData.client] || [] : [];
                   setAvailableDetailLocations(details);
                   updateFormData('detailPenempatan', '');
                 }}
-                options={Object.keys(locationData)}
+                options={formConfig.locations.filter(location => location.isActive).map(location => location.name)}
                 error={errors.penempatan}
                 required
                 icon={MapPin}

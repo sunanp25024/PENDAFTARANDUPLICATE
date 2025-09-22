@@ -27,7 +27,8 @@ import BooleanInput from './BooleanInput';
 type ManagementView = 'fields' | 'clients' | 'locations' | 'positions';
 
 const FormManagement: React.FC = () => {
-  const [config, setConfig] = useState<FormConfig>(loadFormConfig());
+  const [localConfig, setLocalConfig] = useState<FormConfig>(loadFormConfig());
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentView, setCurrentView] = useState<ManagementView>('fields');
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [editingClient, setEditingClient] = useState<ClientConfig | null>(null);
@@ -36,13 +37,29 @@ const FormManagement: React.FC = () => {
   const [filterStep, setFilterStep] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  const handleGlobalSave = () => {
+    saveFormConfig(localConfig);
+    setHasUnsavedChanges(false);
+  };
+
+  const handleDiscardChanges = () => {
+    setLocalConfig(loadFormConfig());
+    setHasUnsavedChanges(false);
+  };
+
+  const handleLocalConfigChange = (newConfig: FormConfig) => {
+    setLocalConfig(newConfig);
+    setHasUnsavedChanges(true);
+  };
+
   const handleSaveConfig = (newConfig: FormConfig) => {
-    setConfig(newConfig);
     saveFormConfig(newConfig);
+    setLocalConfig(newConfig);
+    setHasUnsavedChanges(false);
   };
 
   const handleExportConfig = () => {
-    const configJson = exportFormConfig();
+    const configJson = JSON.stringify(localConfig, null, 2);
     const blob = new Blob([configJson], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -58,10 +75,12 @@ const FormManagement: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
-        if (importFormConfig(content)) {
-          setConfig(loadFormConfig());
-          alert('Configuration imported successfully!');
-        } else {
+        try {
+          const importedConfig = JSON.parse(content);
+          setLocalConfig(importedConfig);
+          setHasUnsavedChanges(true);
+          alert('Configuration imported successfully! Click "Save All Changes" to apply.');
+        } catch (error) {
           alert('Failed to import configuration. Please check the file format.');
         }
       };
@@ -93,7 +112,7 @@ const FormManagement: React.FC = () => {
   const handleSaveField = () => {
     if (!editingField) return;
 
-    const newConfig = { ...config };
+    const newConfig = { ...localConfig };
     const stepIndex = newConfig.steps.findIndex(step => step.id === newConfig.steps[editingField.step]?.id);
     
     if (stepIndex !== -1) {
@@ -109,18 +128,18 @@ const FormManagement: React.FC = () => {
       newConfig.steps[stepIndex].fields.sort((a, b) => a.order - b.order);
     }
 
-    handleSaveConfig(newConfig);
+    handleLocalConfigChange(newConfig);
     setEditingField(null);
     setShowModal(false);
   };
 
   const handleDeleteField = (fieldId: string) => {
     if (confirm('Are you sure you want to delete this field?')) {
-      const newConfig = { ...config };
+      const newConfig = { ...localConfig };
       newConfig.steps.forEach(step => {
         step.fields = step.fields.filter(field => field.id !== fieldId);
       });
-      handleSaveConfig(newConfig);
+      handleLocalConfigChange(newConfig);
     }
   };
 
@@ -144,7 +163,7 @@ const FormManagement: React.FC = () => {
   const handleSaveClient = () => {
     if (!editingClient) return;
 
-    const newConfig = { ...config };
+    const newConfig = { ...localConfig };
     const existingIndex = newConfig.clients.findIndex(c => c.id === editingClient.id);
     
     if (existingIndex !== -1) {
@@ -153,21 +172,21 @@ const FormManagement: React.FC = () => {
       newConfig.clients.push(editingClient);
     }
 
-    handleSaveConfig(newConfig);
+    handleLocalConfigChange(newConfig);
     setEditingClient(null);
     setShowModal(false);
   };
 
   const handleDeleteClient = (clientId: string) => {
     if (confirm('Are you sure you want to delete this client?')) {
-      const newConfig = { ...config };
+      const newConfig = { ...localConfig };
       newConfig.clients = newConfig.clients.filter(c => c.id !== clientId);
-      handleSaveConfig(newConfig);
+      handleLocalConfigChange(newConfig);
     }
   };
 
   // Get all fields for display
-  const allFields = config.steps.flatMap(step => 
+  const allFields = localConfig.steps.flatMap(step => 
     step.fields.map(field => ({ ...field, stepTitle: step.title }))
   );
 
@@ -187,6 +206,24 @@ const FormManagement: React.FC = () => {
           <p className="text-gray-600">Manage form fields, their properties, and behavior</p>
         </div>
         <div className="flex gap-2">
+          {hasUnsavedChanges && (
+            <>
+              <button
+                onClick={handleGlobalSave}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
+              >
+                <Save size={16} />
+                Save All Changes
+              </button>
+              <button
+                onClick={handleDiscardChanges}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+              >
+                <X size={16} />
+                Discard Changes
+              </button>
+            </>
+          )}
           <button
             onClick={handleAddField}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
@@ -214,6 +251,18 @@ const FormManagement: React.FC = () => {
         </div>
       </div>
 
+      {hasUnsavedChanges && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+            <p className="text-yellow-800 font-medium">You have unsaved changes</p>
+          </div>
+          <p className="text-yellow-700 text-sm mt-1">
+            Click "Save All Changes" to apply your modifications or "Discard Changes" to revert.
+          </p>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 max-w-md">
@@ -234,7 +283,7 @@ const FormManagement: React.FC = () => {
           className="px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-400"
         >
           <option value="">All Steps</option>
-          {config.steps.map((step, index) => (
+          {localConfig.steps.map((step, index) => (
             <option key={step.id} value={index}>{step.title}</option>
           ))}
         </select>
@@ -318,22 +367,54 @@ const FormManagement: React.FC = () => {
 
   const renderClientsView = () => (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
           <h3 className="text-xl font-bold text-gray-900">Clients Management</h3>
           <p className="text-gray-600">Manage clients and their available positions</p>
         </div>
-        <button
-          onClick={handleAddClient}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
-        >
-          <Plus size={16} />
-          Add Client
-        </button>
+        <div className="flex gap-2">
+          {hasUnsavedChanges && (
+            <>
+              <button
+                onClick={handleGlobalSave}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
+              >
+                <Save size={16} />
+                Save All Changes
+              </button>
+              <button
+                onClick={handleDiscardChanges}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+              >
+                <X size={16} />
+                Discard Changes
+              </button>
+            </>
+          )}
+          <button
+            onClick={handleAddClient}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+          >
+            <Plus size={16} />
+            Add Client
+          </button>
+        </div>
       </div>
 
+      {hasUnsavedChanges && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+            <p className="text-yellow-800 font-medium">You have unsaved changes</p>
+          </div>
+          <p className="text-yellow-700 text-sm mt-1">
+            Click "Save All Changes" to apply your modifications or "Discard Changes" to revert.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {config.clients.map((client) => (
+        {localConfig.clients.map((client) => (
           <div key={client.id} className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-bold text-gray-900">{client.name}</h4>
@@ -424,7 +505,7 @@ const FormManagement: React.FC = () => {
                     type="select"
                     value={editingField.step.toString()}
                     onChange={(value) => setEditingField({...editingField, step: parseInt(value)})}
-                    options={config.steps.map((_, index) => index.toString())}
+                    options={localConfig.steps.map((_, index) => index.toString())}
                     required
                   />
                   <FormInput
